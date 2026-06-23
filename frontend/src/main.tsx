@@ -11,6 +11,7 @@ import AlterarSenha from "./pages/AlterarSenha";
 import Usuarios from "./pages/Usuarios";
 
 import Rotas from "./pages/Rotas";
+import Roteirizador from "./pages/Roteirizador";
 import NotasPorRota from "./pages/NotasPorRota";
 import Entregas from "./pages/Entregas";
 import "./index.css";
@@ -43,6 +44,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             element={
               <ProtectedRoute>
                 <NotasPorRota />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/roteirizador"
+            element={
+              <ProtectedRoute>
+                <Roteirizador />
               </ProtectedRoute>
             }
           />

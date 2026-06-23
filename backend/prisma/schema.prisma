@@ -21,6 +21,7 @@ model Nota {
   chaveXml     String?   @unique // <-- Adicione @unique aqui
   cliente      String?
   redespacho   Boolean   @default(false) // Flag de redespacho administrativo
+  pontosParada PontoParada[]
 }
 
 model Entrega {
@@ -112,9 +113,52 @@ model AuditLog {
 }
 
 model Rota {
+  id                   Int           @id @default(autoincrement())
+  numero               String        @unique
+  notas                Nota[]
+  createdAt            DateTime      @default(now())
+  redespacho           Boolean       @default(false) // Indica se a rota é de redespacho
+  origem               String?
+  destino              String?
+  distanciaKm          Float?
+  tempoEstimadoMinutos Int?
+  custoPedagio         Float?
+  dataOtimizacao       DateTime?
+  pontosParada         PontoParada[]
+}
+
+enum TipoPontoParada {
+  ORIGEM
+  ENTREGA
+  DESTINO
+}
+
+model PontoParada {
+  id        Int             @id @default(autoincrement())
+  rotaId    Int
+  rota      Rota            @relation(fields: [rotaId], references: [id], onDelete: Cascade)
+  endereco  String
+  latitude  Float?
+  longitude Float?
+  ordem     Int
+  tipo      TipoPontoParada
+  notaId    Int?
+  nota      Nota?           @relation(fields: [notaId], references: [id], onDelete: SetNull)
+  createdAt DateTime        @default(now())
+
+  @@index([rotaId, ordem])
+  @@index([notaId])
+}
+
+model PracaPedagio {
   id         Int      @id @default(autoincrement())
-  numero     String   @unique
-  notas      Nota[]
+  nome       String
+  rodovia    String
+  km         Float?
+  latitude   Float
+  longitude  Float
+  valorCarro Float?
   createdAt  DateTime @default(now())
-  redespacho Boolean  @default(false) // Indica se a rota é de redespacho
+
+  @@index([latitude, longitude])
 }

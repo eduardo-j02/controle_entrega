@@ -10,6 +10,7 @@ const Sidebar: React.FC = () => {
   const menuItems = [
     { label: "Dashboard", path: "/dashboard", icon: "📊" },
     { label: "Rotas", path: "/rotas", icon: "🛣️" },
+    { label: "Roteirizador", path: "/roteirizador", icon: "🗺️" },
     { label: "Entregas", path: "/entregas", icon: "📦" },
     { label: "Ocorrências", path: "/ocorrencias", icon: "⚠️" },
     // Mostrar "Usuários" apenas para ADMIN/SUPERADMIN

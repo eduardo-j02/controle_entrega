@@ -9,6 +9,8 @@ import { ocorrenciaRoutes } from "./routes/ocorrencia";
 import { authRoutes } from "./routes/auth";
 import { userRoutes } from "./routes/user";
 import { auditLogRoutes } from "./routes/auditLog";
+import { rotaRoutes } from "./routes/rota";
+import { pedagioRoutes } from "./routes/pedagio";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 
@@ -95,6 +97,8 @@ app.register(ocorrenciaRoutes, { prefix: "/ocorrencias" });
 app.register(authRoutes, { prefix: "/auth" });
 app.register(userRoutes, { prefix: "/users" });
 app.register(auditLogRoutes, { prefix: "/audit-logs" });
+app.register(rotaRoutes, { prefix: "/rotas" });
+app.register(pedagioRoutes, { prefix: "/pedagios" });
 
 // Adiciona log global de requisições para depuração
 app.addHook("onRequest", (request, reply, done) => {
