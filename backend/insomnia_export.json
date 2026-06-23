@@ -1,0 +1,287 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2024-06-25T12:00:00.000Z",
+  "__export_source": "controle-entrega-backend",
+  "resources": [
+    {
+      "_id": "wrk_1",
+      "_type": "workspace",
+      "name": "Controle de Entrega API",
+      "description": "Coleção de rotas para o backend Fastify"
+    },
+    {
+      "_id": "env_1",
+      "_type": "environment",
+      "parentId": "wrk_1",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:3333",
+        "jwt_token": ""
+      }
+    },
+    {
+      "_id": "fld_notas",
+      "_type": "request_group",
+      "parentId": "wrk_1",
+      "name": "Notas"
+    },
+    {
+      "_id": "fld_entregas",
+      "_type": "request_group",
+      "parentId": "wrk_1",
+      "name": "Entregas"
+    },
+    {
+      "_id": "fld_ocorrencias",
+      "_type": "request_group",
+      "parentId": "wrk_1",
+      "name": "Ocorrências"
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_1",
+      "name": "Auth"
+    },
+    {
+      "_id": "fld_users",
+      "_type": "request_group",
+      "parentId": "wrk_1",
+      "name": "Usuários"
+    },
+    {
+      "_id": "fld_auditlogs",
+      "_type": "request_group",
+      "parentId": "wrk_1",
+      "name": "Audit Logs"
+    },
+    {
+      "_id": "req_nota_create",
+      "_type": "request",
+      "parentId": "fld_notas",
+      "name": "Criar Nota (upload)",
+      "method": "POST",
+      "url": "{{ base_url }}/notas",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt_token }}" }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "name": "numero", "value": "12345", "type": "text" },
+          { "name": "emissor", "value": "Empresa A", "type": "text" },
+          { "name": "destinatario", "value": "Cliente B", "type": "text" },
+          { "name": "dataEmissao", "value": "2024-06-25T00:00:00.000Z", "type": "text" },
+          { "name": "arquivo", "type": "file", "fileName": "nota12345.pdf" }
+        ]
+      }
+    },
+    {
+      "_id": "req_nota_list",
+      "_type": "request",
+      "parentId": "fld_notas",
+      "name": "Listar Notas",
+      "method": "GET",
+      "url": "{{ base_url }}/notas"
+    },
+    {
+      "_id": "req_nota_get",
+      "_type": "request",
+      "parentId": "fld_notas",
+      "name": "Buscar Nota por ID",
+      "method": "GET",
+      "url": "{{ base_url }}/notas/1"
+    },
+    {
+      "_id": "req_entrega_create",
+      "_type": "request",
+      "parentId": "fld_entregas",
+      "name": "Criar Entrega (upload)",
+      "method": "POST",
+      "url": "{{ base_url }}/entregas",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt_token }}" }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "name": "notaId", "value": "1", "type": "text" },
+          { "name": "dataEntrega", "value": "2024-06-25T10:00:00.000Z", "type": "text" }
+        ]
+      }
+    },
+    {
+      "_id": "req_entrega_create_minimal",
+      "_type": "request",
+      "parentId": "fld_entregas",
+      "name": "Criar Entrega (mínimo)",
+      "method": "POST",
+      "url": "{{ base_url }}/entregas",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt_token }}" }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "name": "notaId", "value": "1", "type": "text" },
+          { "name": "dataEntrega", "value": "2024-06-25T10:00:00.000Z", "type": "text" }
+        ]
+      }
+    },
+    {
+      "_id": "req_entrega_list",
+      "_type": "request",
+      "parentId": "fld_entregas",
+      "name": "Listar Entregas",
+      "method": "GET",
+      "url": "{{ base_url }}/entregas"
+    },
+    {
+      "_id": "req_entrega_get",
+      "_type": "request",
+      "parentId": "fld_entregas",
+      "name": "Buscar Entrega por ID",
+      "method": "GET",
+      "url": "{{ base_url }}/entregas/1"
+    },
+    {
+      "_id": "req_ocorrencia_create",
+      "_type": "request",
+      "parentId": "fld_ocorrencias",
+      "name": "Criar Ocorrência",
+      "method": "POST",
+      "url": "{{ base_url }}/ocorrencias",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt_token }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"entregaId\": 1,\n  \"tipo\": \"Atraso\",\n  \"descricao\": \"Entrega atrasada devido ao trânsito.\"\n}"
+      }
+    },
+    {
+      "_id": "req_ocorrencia_list",
+      "_type": "request",
+      "parentId": "fld_ocorrencias",
+      "name": "Listar Ocorrências",
+      "method": "GET",
+      "url": "{{ base_url }}/ocorrencias"
+    },
+    {
+      "_id": "req_ocorrencia_get",
+      "_type": "request",
+      "parentId": "fld_ocorrencias",
+      "name": "Buscar Ocorrência por ID",
+      "method": "GET",
+      "url": "{{ base_url }}/ocorrencias/1"
+    },
+    {
+      "_id": "req_register",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Registrar Usuário",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/register",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt_token }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"admin\",\n  \"nome\": \"Administrador\",\n  \"password\": \"admin123\",\n  \"role\": \"ADMIN\"\n}"
+      }
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/login",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+      }
+    },
+    {
+      "_id": "req_refresh",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Refresh Token",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/refresh",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"{{ refresh_token }}\"\n}"
+      }
+    },
+    {
+      "_id": "req_user_list",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Listar Usuários (ADMIN)",
+      "method": "GET",
+      "url": "{{ base_url }}/users",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt_token }}" }
+      ]
+    },
+    {
+      "_id": "req_user_get",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Buscar Usuário por ID",
+      "method": "GET",
+      "url": "{{ base_url }}/users/1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt_token }}" }
+      ]
+    },
+    {
+      "_id": "req_user_update",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Editar Usuário",
+      "method": "PUT",
+      "url": "{{ base_url }}/users/1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt_token }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Novo Nome\",\n  \"password\": \"novasenha\",\n  \"role\": \"ADMIN\"\n}"
+      }
+    },
+    {
+      "_id": "req_user_delete",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Deletar Usuário (ADMIN)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/users/1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt_token }}" }
+      ]
+    },
+    {
+      "_id": "req_auditlog_list",
+      "_type": "request",
+      "parentId": "fld_auditlogs",
+      "name": "Listar Logs de Auditoria (ADMIN/SUPERADMIN)",
+      "method": "GET",
+      "url": "{{ base_url }}/audit-logs",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt_token }}" }
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist[0-9]*/
+.env
+.env.*
+!.env.example
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+*.tsbuildinfo
+teste.pdf
+deps-used.json

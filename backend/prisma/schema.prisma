@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Nota {
+  id           Int       @id @default(autoincrement())
+  numero       String
+  emissor      String
+  destinatario String
+  dataEmissao  DateTime
+  arquivo      String
+  entregas     Entrega[]
+  createdAt    DateTime  @default(now())
+  rotaId       Int?
+  rota         Rota?     @relation(fields: [rotaId], references: [id])
+  chaveXml     String?   @unique // <-- Adicione @unique aqui
+  cliente      String?
+  redespacho   Boolean   @default(false) // Flag de redespacho administrativo
+}
+
+model Entrega {
+  id                  Int                @id @default(autoincrement())
+  notaId              Int
+  dataEntrega         DateTime
+  comprovante         String?
+  latitude            Float?
+  longitude           Float?
+  ocorrencias         Ocorrencia[]
+  createdAt           DateTime           @default(now())
+  nota                Nota               @relation(fields: [notaId], references: [id])
+  motoristaId         Int?
+  motorista           User?              @relation(fields: [motoristaId], references: [id])
+  status              String             @default("Pendente")
+  dataFinalizacao     DateTime?
+  assinaturaRecebedor String? // Assinatura digital (base64) ou nome do arquivo da foto
+  nomeRecebedor       String? // Nome de quem recebeu a entrega
+  hashComprovante     String? // Hash SHA256 do comprovante
+  redespacho          Boolean            @default(false) // Indica se é redespacho
+  motoristas          EntregaMotorista[] // Relação N:N
+}
+
+model EntregaMotorista {
+  id                Int       @id @default(autoincrement())
+  entregaId         Int
+  motoristaId       Int
+  ordem             Int // Sequência do redespacho
+  dataVinculo       DateTime  @default(now())
+  dataTransferencia DateTime?
+  entrega           Entrega   @relation(fields: [entregaId], references: [id])
+  motorista         User      @relation(fields: [motoristaId], references: [id])
+
+  @@unique([entregaId, motoristaId])
+}
+
+enum StatusOcorrencia {
+  ABERTA
+  FECHADA
+}
+
+model Ocorrencia {
+  id              Int              @id @default(autoincrement())
+  entregaId       Int
+  entrega         Entrega          @relation(fields: [entregaId], references: [id])
+  descricao       String
+  createdAt       DateTime         @default(now())
+  fotos           OcorrenciaFoto[]
+  // Novos campos
+  status          StatusOcorrencia @default(ABERTA)
+  finalizadaPorId Int? // User que fechou
+  finalizadaPor   User?            @relation(fields: [finalizadaPorId], references: [id])
+  solucao         String?
+  protocoloErp    String?
+  dataFinalizacao DateTime?
+}
+
+model OcorrenciaFoto {
+  id           Int        @id @default(autoincrement())
+  ocorrenciaId Int
+  ocorrencia   Ocorrencia @relation(fields: [ocorrenciaId], references: [id])
+  filename     String
+  createdAt    DateTime   @default(now())
+}
+
+model User {
+  id           Int                @id @default(autoincrement())
+  username     String             @unique
+  nome         String
+  password     String
+  role         String             @default("USER")
+  refreshToken String?
+  createdAt    DateTime           @default(now())
+  AuditLog     AuditLog[]
+  Entrega      Entrega[]
+  motoristas   EntregaMotorista[]
+  Ocorrencia   Ocorrencia[]
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  Int?
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+}
+
+model Rota {
+  id         Int      @id @default(autoincrement())
+  numero     String   @unique
+  notas      Nota[]
+  createdAt  DateTime @default(now())
+  redespacho Boolean  @default(false) // Indica se a rota é de redespacho
+}

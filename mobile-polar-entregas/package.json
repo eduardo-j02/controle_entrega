@@ -1,0 +1,41 @@
+{
+  "name": "mobile-polar-entregas",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "npx react-native start",
+    "android": "npx react-native run-android",
+    "ios": "npx react-native run-ios",
+    "web": "expo start --web",
+    "clean": "rimraf android/app/build && rimraf ios/build && rimraf node_modules && rimraf .expo && rimraf .expo-shared && rimraf package-lock.json && rimraf yarn.lock",
+    "reset-metro": "npx react-native start --reset-cache",
+    "bundle-android": "npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res",
+    "bundle-ios": "npx react-native bundle --platform ios --dev false --entry-file index.js --bundle-output ios/main.jsbundle --assets-dest ios"
+  },
+  "dependencies": {
+    "@react-navigation/native": "^7.1.14",
+    "@react-navigation/native-stack": "^7.3.21",
+    "expo": "^53.0.15",
+    "expo-camera": "~16.1.10",
+    "expo-image-manipulator": "~13.1.7",
+    "expo-image-picker": "~16.1.4",
+    "expo-location": "~18.1.6",
+    "expo-secure-store": "~14.2.3",
+    "expo-sharing": "^13.1.5",
+    "expo-status-bar": "~2.2.3",
+    "react": "19.0.0",
+    "react-native": "0.79.4",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.11.1",
+    "react-native-signature-canvas": "^5.0.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@react-native-community/cli": "latest",
+    "@types/node": "^24.0.13",
+    "@types/react": "~19.0.10",
+    "rimraf": "^6.0.1",
+    "typescript": "~5.8.3"
+  },
+  "private": true
+}

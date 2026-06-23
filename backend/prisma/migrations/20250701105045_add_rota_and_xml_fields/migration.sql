@@ -1,0 +1,17 @@
+-- AlterTable
+ALTER TABLE `Nota` ADD COLUMN `chaveXml` VARCHAR(191) NULL,
+    ADD COLUMN `cliente` VARCHAR(191) NULL,
+    ADD COLUMN `rotaId` INTEGER NULL;
+
+-- CreateTable
+CREATE TABLE `Rota` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `numero` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `Rota_numero_key`(`numero`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `Nota` ADD CONSTRAINT `Nota_rotaId_fkey` FOREIGN KEY (`rotaId`) REFERENCES `Rota`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
