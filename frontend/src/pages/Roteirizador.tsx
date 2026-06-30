@@ -4,6 +4,11 @@ import { useAuth } from "../context/AuthContext";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
+type AddressSuggestion = {
+  place_id: number;
+  display_name: string;
+};
+
 type EntregaInput = {
   endereco: string;
 };
@@ -46,6 +51,154 @@ const defaultIcon = L.icon({
   iconAnchor: [12, 41],
 });
 L.Marker.prototype.options.icon = defaultIcon;
+
+const createStopIcon = (label: string, color: string) =>
+  L.divIcon({
+    className: "",
+    html: `<div style="width:28px;height:28px;border-radius:999px;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.25)">${label}</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -12],
+  });
+
+const AUTOCOMPLETE_URL =
+  import.meta.env.VITE_NOMINATIM_URL || "https://nominatim.openstreetmap.org/search";
+
+type AddressAutocompleteInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  style?: React.CSSProperties;
+};
+
+const AddressAutocompleteInput: React.FC<AddressAutocompleteInputProps> = ({
+  value,
+  onChange,
+  placeholder,
+  style,
+}) => {
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const query = value.trim();
+    if (query.length < 3) {
+      setSuggestions([]);
+      setOpen(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setLoadingSuggestions(true);
+        const url = `${AUTOCOMPLETE_URL}?format=jsonv2&countrycodes=br&addressdetails=1&limit=6&q=${encodeURIComponent(
+          query
+        )}`;
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            "Accept-Language": "pt-BR",
+          },
+        });
+        if (!response.ok) {
+          setSuggestions([]);
+          setOpen(false);
+          return;
+        }
+
+        const data = (await response.json()) as AddressSuggestion[];
+        setSuggestions(data || []);
+        setOpen((data || []).length > 0);
+      } catch {
+        setSuggestions([]);
+        setOpen(false);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }, 350);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [value]);
+
+  useEffect(() => {
+    const onClickOutside = (event: MouseEvent) => {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  return (
+    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setOpen(suggestions.length > 0)}
+        placeholder={placeholder}
+        autoComplete="off"
+        style={{ width: "100%", ...style }}
+      />
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: "#fff",
+            border: "1px solid #cbd5e1",
+            borderRadius: 8,
+            maxHeight: 220,
+            overflowY: "auto",
+            boxShadow: "0 8px 20px rgba(15, 23, 42, 0.12)",
+          }}
+        >
+          {loadingSuggestions ? (
+            <div style={{ padding: 10, fontSize: 13, color: "#64748b" }}>
+              Buscando enderecos...
+            </div>
+          ) : (
+            suggestions.map((item) => (
+              <button
+                key={item.place_id}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onChange(item.display_name);
+                  setOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  border: "none",
+                  background: "transparent",
+                  padding: "10px 12px",
+                  cursor: "pointer",
+                  borderBottom: "1px solid #f1f5f9",
+                  fontSize: 13,
+                }}
+              >
+                {item.display_name}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Roteirizador: React.FC = () => {
   const { token, forceLogout, pingToken } = useAuth();
@@ -100,16 +253,34 @@ const Roteirizador: React.FC = () => {
       }).addTo(mapRef.current);
     }
 
+    let entregaNumero = 0;
     result.rota.pontosParada.forEach((p) => {
       if (p.latitude == null || p.longitude == null) return;
-      const marker = L.marker([p.latitude, p.longitude])
-        .bindPopup(`<b>${p.ordem}. ${p.tipo}</b><br/>${p.endereco}`);
+
+      let label = "?";
+      let color = "#1d4ed8";
+      if (p.tipo === "ORIGEM") {
+        label = "O";
+        color = "#0f766e";
+      } else if (p.tipo === "DESTINO") {
+        label = "D";
+        color = "#7c3aed";
+      } else {
+        entregaNumero += 1;
+        label = String(entregaNumero);
+        color = "#2563eb";
+      }
+
+      const marker = L.marker([p.latitude, p.longitude], {
+        icon: createStopIcon(label, color),
+      }).bindPopup(`<b>${p.ordem}. ${p.tipo}</b><br/>${p.endereco}`);
       marker.addTo(markersRef.current!);
     });
 
+    const markerLayers = (markersRef.current?.getLayers() ?? []) as L.Layer[];
     const groupBounds = L.featureGroup([
       ...(routeLayerRef.current ? [routeLayerRef.current] : []),
-      ...(markersRef.current ? [markersRef.current] : []),
+      ...markerLayers,
     ]).getBounds();
 
     if (groupBounds.isValid()) {
@@ -191,122 +362,204 @@ const Roteirizador: React.FC = () => {
 
   return (
     <Layout>
-      <div style={{ width: "100%", maxWidth: 1200, padding: 24 }}>
-        <h1 style={{ color: "#1d4ed8", marginBottom: 16 }}>Roteirizador</h1>
-
-        <form
-          onSubmit={otimizar}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: 12,
-            background: "#fff",
-            borderRadius: 12,
-            border: "1px solid #dbeafe",
-            padding: 16,
-            marginBottom: 16,
-          }}
-        >
-          <input
-            value={numero}
-            onChange={(e) => setNumero(e.target.value)}
-            placeholder="Número da rota"
-            style={{ padding: 10, borderRadius: 8, border: "1px solid #cbd5e1" }}
-          />
-          <input
-            value={origem}
-            onChange={(e) => setOrigem(e.target.value)}
-            placeholder="Origem"
-            style={{ padding: 10, borderRadius: 8, border: "1px solid #cbd5e1" }}
-          />
-          <input
-            value={destino}
-            onChange={(e) => setDestino(e.target.value)}
-            placeholder="Destino (opcional)"
-            style={{ padding: 10, borderRadius: 8, border: "1px solid #cbd5e1" }}
-          />
-
-          <div style={{ gridColumn: "1 / -1" }}>
-            <strong>Entregas</strong>
-            {entregas.map((entrega, idx) => (
-              <div key={idx} style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                <input
-                  value={entrega.endereco}
-                  onChange={(e) => updateEntrega(idx, e.target.value)}
-                  placeholder={`Endereço de entrega ${idx + 1}`}
-                  style={{ flex: 1, padding: 10, borderRadius: 8, border: "1px solid #cbd5e1" }}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeEntrega(idx)}
-                  style={{ padding: "0 12px", borderRadius: 8, border: "1px solid #cbd5e1" }}
-                >
-                  Remover
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addEntrega}
-              style={{ marginTop: 10, border: "none", background: "#2563eb", color: "#fff", padding: "8px 12px", borderRadius: 8 }}
-            >
-              + Adicionar entrega
-            </button>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              gridColumn: "1 / -1",
-              background: loading ? "#94a3b8" : "#1d4ed8",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              padding: "12px 16px",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: 700,
-            }}
-          >
-            {loading ? "Otimizando..." : "Otimizar rota"}
-          </button>
-        </form>
-
-        {error && (
-          <div style={{ marginBottom: 12, color: "#dc2626", fontWeight: 600 }}>{error}</div>
-        )}
-
-        {result && (
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 12,
-              border: "1px solid #dbeafe",
-              padding: 16,
-              marginBottom: 16,
-              display: "flex",
-              gap: 24,
-              flexWrap: "wrap",
-            }}
-          >
-            <div><strong>Distância:</strong> {result.rota.distanciaKm ?? 0} km</div>
-            <div><strong>Tempo:</strong> {result.rota.tempoEstimadoMinutos ?? 0} min</div>
-            <div><strong>Pedágio:</strong> R$ {(result.rota.custoPedagio ?? 0).toFixed(2)}</div>
-            <div><strong>Paradas:</strong> {result.rota.pontosParada.length}</div>
-          </div>
-        )}
+      <div style={{ width: "100%", maxWidth: 1600, padding: 24, margin: "0 auto" }}>
+        <h1 style={{ color: "#1d4ed8", marginBottom: 28, fontSize: 28 }}>Roteirizador</h1>
 
         <div
-          ref={mapContainerRef}
           style={{
-            width: "100%",
-            height: 480,
-            borderRadius: 12,
-            border: "1px solid #dbeafe",
-            overflow: "hidden",
-            background: "#e2e8f0",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 28,
+            alignItems: "start",
           }}
-        />
+        >
+          {/* Coluna esquerda: Formulário e Resultados */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {/* Card Formulário */}
+            <form
+              onSubmit={otimizar}
+              style={{
+                background: "#fff",
+                borderRadius: 12,
+                border: "1px solid #e0e7ff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                padding: 20,
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+              }}
+            >
+              <h2 style={{ fontSize: 16, fontWeight: 600, color: "#1e293b", margin: 0 }}>Planar Rota</h2>
+              <input
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                placeholder="Número da rota"
+                style={{ padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14 }}
+              />
+
+              <AddressAutocompleteInput
+                value={origem}
+                onChange={setOrigem}
+                placeholder="Origem"
+                style={{ padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14 }}
+              />
+
+              <AddressAutocompleteInput
+                value={destino}
+                onChange={setDestino}
+                placeholder="Destino (opcional)"
+                style={{ padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14 }}
+              />
+
+              <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 12 }}>
+                <strong style={{ display: "block", marginBottom: 10, color: "#1e293b", fontSize: 14 }}>Endereços de Entrega</strong>
+                {entregas.map((entrega, idx) => (
+                  <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                    <AddressAutocompleteInput
+                      value={entrega.endereco}
+                      onChange={(value) => updateEntrega(idx, value)}
+                      placeholder={`Endereco de entrega ${idx + 1}`}
+                      style={{ flex: 1, padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeEntrega(idx)}
+                      style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", fontSize: 13, whiteSpace: "nowrap" }}
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addEntrega}
+                  style={{ marginTop: 8, border: "none", background: "#2563eb", color: "#fff", padding: "8px 12px", borderRadius: 6, cursor: "pointer", fontSize: 13 }}
+                >
+                  + Adicionar entrega
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  background: loading ? "#94a3b8" : "#1d4ed8",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "12px 16px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  marginTop: 4,
+                }}
+              >
+                {loading ? "Otimizando..." : "Otimizar rota"}
+              </button>
+            </form>
+
+            {/* Card Erro */}
+            {error && (
+              <div style={{
+                background: "#fee2e2",
+                border: "1px solid #fca5a5",
+                borderRadius: 12,
+                padding: 14,
+                color: "#991b1b",
+                fontSize: 14,
+              }}>
+                ⚠️ {error}
+              </div>
+            )}
+
+            {/* Card Resultados */}
+            {result && (
+              <div style={{
+                background: "#f0f9ff",
+                border: "1px solid #bae6fd",
+                borderRadius: 12,
+                padding: 20,
+              }}>
+                <h2 style={{ fontSize: 16, fontWeight: 600, color: "#1e293b", margin: 0, marginBottom: 14 }}>Resumo da Rota</h2>
+
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: 12,
+                  marginBottom: result.pedagios.length ? 18 : 0,
+                }}>
+                  <div style={{ background: "#fff", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                    <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Distância</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "#1d4ed8" }}>{result.rota.distanciaKm ?? 0} km</div>
+                  </div>
+                  <div style={{ background: "#fff", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                    <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Tempo</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "#1d4ed8" }}>{result.rota.tempoEstimadoMinutos ?? 0} min</div>
+                  </div>
+                  <div style={{ background: "#fff", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                    <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Pedágio</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "#059669" }}>R$ {(result.rota.custoPedagio ?? 0).toFixed(2)}</div>
+                  </div>
+                  <div style={{ background: "#fff", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                    <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Paradas</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "#1d4ed8" }}>{result.rota.pontosParada.length}</div>
+                  </div>
+                </div>
+
+                {result.pedagios.length > 0 && (
+                  <div style={{ borderTop: "1px solid #bae6fd", paddingTop: 14 }}>
+                    <strong style={{ display: "block", marginBottom: 10, fontSize: 14, color: "#1e293b" }}>
+                      Praças de Pedágio ({result.pedagios.length})
+                    </strong>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {result.pedagios.map((p) => (
+                        <div
+                          key={p.id}
+                          style={{
+                            background: "#fff",
+                            padding: "12px 14px",
+                            borderRadius: 6,
+                            border: "1px solid #e2e8f0",
+                            fontSize: 13,
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
+                            <strong style={{ color: "#1e293b" }}>{p.nome}</strong>
+                            <span style={{ color: "#059669", fontWeight: 600 }}>R$ {p.valorCarro.toFixed(2)}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: "#64748b" }}>
+                            {p.rodovia} · {p.distanciaKm.toFixed(2)} km da rota
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Coluna direita: Mapa */}
+          <div style={{
+            background: "#fff",
+            borderRadius: 12,
+            border: "1px solid #e0e7ff",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+            overflow: "hidden",
+            position: "sticky",
+            top: 24,
+            height: "fit-content",
+          }}>
+            <div
+              ref={mapContainerRef}
+              style={{
+                width: "100%",
+                height: 650,
+                background: "#e2e8f0",
+              }}
+            />
+          </div>
+        </div>
       </div>
     </Layout>
   );
