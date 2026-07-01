@@ -394,37 +394,37 @@ const Roteirizador: React.FC = () => {
                 value={numero}
                 onChange={(e) => setNumero(e.target.value)}
                 placeholder="Número da rota"
-                style={{ padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14 }}
+                style={{ padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14, width: "100%", boxSizing: "border-box" }}
               />
 
               <AddressAutocompleteInput
                 value={origem}
                 onChange={setOrigem}
                 placeholder="Origem"
-                style={{ padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14 }}
+                style={{ padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14, width: "100%", boxSizing: "border-box" }}
               />
 
               <AddressAutocompleteInput
                 value={destino}
                 onChange={setDestino}
                 placeholder="Destino (opcional)"
-                style={{ padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14 }}
+                style={{ padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14, width: "100%", boxSizing: "border-box" }}
               />
 
               <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 12 }}>
                 <strong style={{ display: "block", marginBottom: 10, color: "#1e293b", fontSize: 14 }}>Endereços de Entrega</strong>
                 {entregas.map((entrega, idx) => (
-                  <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                  <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
                     <AddressAutocompleteInput
                       value={entrega.endereco}
                       onChange={(value) => updateEntrega(idx, value)}
                       placeholder={`Endereco de entrega ${idx + 1}`}
-                      style={{ flex: 1, padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14 }}
+                      style={{ flex: 1, padding: 10, borderRadius: 6, border: "1px solid #cbd5e1", fontSize: 14, width: "100%", boxSizing: "border-box" }}
                     />
                     <button
                       type="button"
                       onClick={() => removeEntrega(idx)}
-                      style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", fontSize: 13, whiteSpace: "nowrap" }}
+                      style={{ padding: "10px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", fontSize: 13, whiteSpace: "nowrap", flexShrink: 0, minWidth: "fit-content" }}
                     >
                       Remover
                     </button>
